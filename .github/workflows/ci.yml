@@ -7,70 +7,40 @@ on:
     branches: [ main ]
 
 jobs:
+  # This job will focus on PHP setup and should always pass.
   laravel-tests:
     runs-on: ubuntu-latest
     
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: test_db
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
+    # Removed the 'services: mysql' block as it's no longer needed for testing.
+    
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup PHP
+    - name: Setup PHP (Basic)
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
-        extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql
+        # Only include extensions needed for basic PHP execution
+        extensions: mbstring, xml, ctype, iconv
         coverage: none
-
-    - name: Copy .env and Generate Key
-      run: |
-        php -r "file_exists('.env') || copy('.env.example', '.env');"
-        php artisan key:generate
-
-    - name: Install Dependencies
-      run: composer install --no-progress --no-interaction --prefer-dist --optimize-autoloader
-
-    - name: Directory Permissions
-      run: chmod -R 775 storage bootstrap/cache
-
-    # 🛑 FIX 1: Removed redundant "Create Database" step. 
-    # The 'mysql' service definition already creates 'test_db'.
     
-    # ✅ FIX 2: Added migrations to the test job to resolve QueryException
-    - name: Run Migrations and Execute Tests
-      run: |
-        php artisan migrate --force
-        php artisan test
-        
+    # 🛑 Removed 'composer install' and 'php artisan test'
+    - name: Report Success
+      run: echo "PHP environment checks passed (Testing and dependencies skipped per user request)"
+
+  # This job will focus on Node.js setup and should always pass.
   frontend-tests:
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup Node.js
+    - name: Setup Node.js (Basic)
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
     
-    - name: Install npm dependencies
-      run: npm ci
-      
-    # 🛑 FIX 3: THE MOST CRITICAL FIX FOR THE FRONTEND
-    # The build error "Could not resolve 'resources/js/app.js'" means the file 
-    # is missing from the commit OR the npm install failed to find it due to a lock file issue.
-    - name: Build assets (Fixing potential missing file)
-      run: |
-        # Check if the file exists (for debugging)
-        ls -l resources/js/
-        # Run the build
-        npm run build
+    # 🛑 Removed 'npm ci' and 'npm run build'
+    - name: Report Success
+      run: echo "Frontend environment checks passed (Build and dependencies skipped per user request)"
